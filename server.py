@@ -25,11 +25,10 @@ from binascii import rledecode_hqx
 from urllib import response
 import flask
 from flask import Flask, request, redirect, Response
-from flask_cors import CORS
 
 import json
 app = Flask(__name__)
-CORS(app)
+
 app.debug = True
 
 # An example world
@@ -67,7 +66,7 @@ myWorld = World()
 # I give this to you, this is how you get the raw body/data portion of a post in flask
 # this should come with flask but whatever, it's not my project.
 
-def json_response(response):
+def get_response(response):
     contentType = "application/json"
     response = Response(json.dumps(response))
     response.headers["Content-Type"] = contentType
@@ -89,7 +88,7 @@ def flask_post_json():
 def hello():
     '''Return something coherent here..
        perhaps redirect to /static/index.html '''
-    return app.send_static_file("index.html")
+    return redirect('/static/index.html')
 
 
 @app.route("/json2.js")
@@ -107,22 +106,24 @@ def update(entity):
         myWorld.update(entity, i, j)
         myWorld.update(entity, i, j)
 
-    response = json_response(request)
+    res = get_response(request)
 
-    return response
+    return res
 
 
 @app.route("/world", methods=['POST', 'GET'])
 def world():
     '''you should probably return the world here'''
-    return json_response(myWorld.world())
+    res = get_response(myWorld.world())
+    return res
 
 
 @app.route("/entity/<entity>")
 def get_entity(entity):
     '''This is the GET version of the entity interface,
        return a representation of the entity'''
-    return json_response(myWorld.get(entity))
+    res = get_response(myWorld.get(entity))
+    return res
 
 
 @app.route("/clear", methods=['POST', 'GET'])
@@ -130,7 +131,7 @@ def clear():
     '''Clear the world out!'''
     myWorld.clear()
 
-    return json_response(myWorld.world())
+    return get_response(myWorld.world())
 
 
 if __name__ == "__main__":
