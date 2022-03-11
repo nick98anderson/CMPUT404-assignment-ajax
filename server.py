@@ -21,10 +21,15 @@
 #     pip install flask
 
 
+from binascii import rledecode_hqx
+from urllib import response
 import flask
-from flask import Flask, request
+from flask import Flask, request, redirect, Response
+from flask_cors import CORS
+
 import json
 app = Flask(__name__)
+CORS(app)
 app.debug = True
 
 # An example world
@@ -61,40 +66,72 @@ myWorld = World()
 
 # I give this to you, this is how you get the raw body/data portion of a post in flask
 # this should come with flask but whatever, it's not my project.
+
+def json_response(response):
+    contentType = "application/json"
+    response = Response(json.dumps(response))
+    response.headers["Content-Type"] = contentType
+    return response
+
+
 def flask_post_json():
     '''Ah the joys of frameworks! They do so much work for you
        that they get in the way of sane operation!'''
     if (request.json != None):
         return request.json
-    elif (request.data != None and request.data.decode("utf8") != u''):
-        return json.loads(request.data.decode("utf8"))
+    elif (request.data != None and request.data != ''):
+        return json.loads(request.data)
     else:
         return json.loads(request.form.keys()[0])
 
+
 @app.route("/")
 def hello():
-    '''Return something coherent here.. perhaps redirect to /static/index.html '''
-    return None
+    '''Return something coherent here..
+       perhaps redirect to /static/index.html '''
+    return app.send_static_file("index.html")
 
-@app.route("/entity/<entity>", methods=['POST','PUT'])
+
+@app.route("/json2.js")
+def get_json():
+    '''serve json.js'''
+    return app.send_static_file("json2.js")
+
+
+@app.route("/entity/<entity>", methods=['POST', 'PUT'])
 def update(entity):
     '''update the entities via this interface'''
-    return None
+    request = flask_post_json()
 
-@app.route("/world", methods=['POST','GET'])    
+    for i, j in request.items():
+        myWorld.update(entity, i, j)
+        myWorld.update(entity, i, j)
+
+    response = json_response(request)
+
+    return response
+
+
+@app.route("/world", methods=['POST', 'GET'])
 def world():
     '''you should probably return the world here'''
-    return None
+    return json_response(myWorld.world())
 
-@app.route("/entity/<entity>")    
+
+@app.route("/entity/<entity>")
 def get_entity(entity):
-    '''This is the GET version of the entity interface, return a representation of the entity'''
-    return None
+    '''This is the GET version of the entity interface,
+       return a representation of the entity'''
+    return json_response(myWorld.get(entity))
 
-@app.route("/clear", methods=['POST','GET'])
+
+@app.route("/clear", methods=['POST', 'GET'])
 def clear():
     '''Clear the world out!'''
-    return None
+    myWorld.clear()
+
+    return json_response(myWorld.world())
+
 
 if __name__ == "__main__":
     app.run()
